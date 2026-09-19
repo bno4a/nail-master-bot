@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/nailbot
+    username: nailbot
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+salon:
+  work-start: "10:00"
+  work-end: "19:00"
+  slot-duration: 2h
+  day-off: SUNDAY
+  booking-days: 7
+
+bot:
+  token: ${BOT_TOKEN}
+  username: ${BOT_USERNAME}
+  master-id: ${MASTER_TELEGRAM_ID}
