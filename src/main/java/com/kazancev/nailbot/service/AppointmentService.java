@@ -26,6 +26,10 @@ public class AppointmentService {
         return serviceItemRepository.findAllByOrderByIdAsc();
     }
 
+    public ServiceItem getService(Long serviceId) {
+        return serviceItemRepository.findById(serviceId).orElseThrow();
+    }
+
     public Appointment create(Long telegramId, String firstName, Long serviceId, LocalDate date, LocalTime time) {
         Client client = clientService.getOrCreate(telegramId, firstName);
         ServiceItem service = serviceItemRepository.findById(serviceId).orElseThrow();
