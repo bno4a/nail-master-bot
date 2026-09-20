@@ -22,3 +22,4 @@ bot:
   token: ${BOT_TOKEN}
   username: ${BOT_USERNAME}
   master-id: ${MASTER_TELEGRAM_ID}
+  reminder-cron: "0 0 18 * * *"

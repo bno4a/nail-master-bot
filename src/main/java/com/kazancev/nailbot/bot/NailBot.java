@@ -32,16 +32,19 @@ public class NailBot extends TelegramLongPollingBot {
     private static final String RESTART = "Кнопка устарела. Нажмите «Записаться», чтобы начать заново.";
 
     private final String username;
+    private final Long masterId;
     private final AppointmentService appointmentService;
     private final SlotService slotService;
     private final Map<Long, BookingState> bookingStates = new ConcurrentHashMap<>();
 
     public NailBot(@Value("${bot.token}") String token,
                    @Value("${bot.username}") String username,
+                   @Value("${bot.master-id}") Long masterId,
                    AppointmentService appointmentService,
                    SlotService slotService) {
         super(token);
         this.username = username;
+        this.masterId = masterId;
         this.appointmentService = appointmentService;
         this.slotService = slotService;
     }
@@ -66,6 +69,7 @@ public class NailBot extends TelegramLongPollingBot {
 
         switch (message.getText()) {
             case "/start" -> send(chatId, greeting(message.getFrom().getFirstName()));
+            case "/today" -> showToday(chatId, telegramId);
             case Keyboards.BOOK -> startBooking(chatId, telegramId);
             case Keyboards.MY_APPOINTMENTS -> showMyAppointments(chatId, telegramId);
             case Keyboards.PRICE -> send(chatId, priceList());
@@ -148,6 +152,7 @@ public class NailBot extends TelegramLongPollingBot {
                     from.getId(), from.getFirstName(), state.getServiceId(), state.getDate(), state.getTime());
             bookingStates.remove(from.getId());
             send(chatId, "Вы записаны!\n\n" + describe(appointment));
+            notifyMaster("Новая запись\n\n" + describe(appointment) + "\nКлиент: " + from.getFirstName());
         } catch (SlotTakenException e) {
             send(chatId, e.getMessage(), Keyboards.times(slotService.getFreeSlots(state.getDate())));
         }
@@ -175,7 +180,37 @@ public class NailBot extends TelegramLongPollingBot {
             send(chatId, "Запись не найдена. Возможно, она уже отменена.");
             return;
         }
-        send(chatId, "Запись отменена:\n\n" + describe(cancelled.get()));
+        Appointment appointment = cancelled.get();
+        send(chatId, "Запись отменена:\n\n" + describe(appointment));
+        notifyMaster("Отмена записи\n\n" + describe(appointment)
+                + "\nКлиент: " + appointment.getClient().getFirstName());
+    }
+
+    private void showToday(Long chatId, Long telegramId) {
+        if (!telegramId.equals(masterId)) {
+            send(chatId, "Эта команда доступна только мастеру.");
+            return;
+        }
+        List<Appointment> appointments = appointmentService.getByDate(LocalDate.now());
+        if (appointments.isEmpty()) {
+            send(chatId, "На сегодня записей нет.");
+            return;
+        }
+        StringBuilder text = new StringBuilder("Записи на сегодня:\n");
+        for (Appointment appointment : appointments) {
+            text.append("\n").append(Formats.TIME.format(appointment.getTime()))
+                    .append(" — ").append(appointment.getService().getName())
+                    .append(", ").append(appointment.getClient().getFirstName());
+        }
+        send(chatId, text.toString());
+    }
+
+    public void sendReminder(Appointment appointment) {
+        send(appointment.getClient().getTelegramId(), "Напоминаем о записи завтра:\n\n" + describe(appointment));
+    }
+
+    private void notifyMaster(String text) {
+        send(masterId, text);
     }
 
     private String describe(Appointment appointment) {
