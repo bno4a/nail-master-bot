@@ -31,7 +31,7 @@ Telegram-бот для записи на маникюр к одному маст
 - PostgreSQL 16, Spring Data JPA (Hibernate), Flyway
 - TelegramBots 6.9 (long polling)
 - Lombok
-- JUnit 5, Mockito, AssertJ
+- JUnit 5, Mockito, AssertJ, Testcontainers
 - Docker и Docker Compose
 
 ## Структура проекта
@@ -94,6 +94,15 @@ docker compose up -d postgres
 ```bash
 ./mvnw test
 ```
+
+Юнит-тесты на моках проверяют расчёт слотов и правила отмены. Интеграционные тесты поднимают настоящий PostgreSQL 16 через Testcontainers, накатывают на него те же миграции Flyway, что и в проде, и проверяют то, что на моках проверить нельзя:
+
+- `BookingConcurrencyTest` — восемь клиентов одновременно бьются за один слот: запись получает ровно один, остальные видят «время занято»;
+- `AppointmentServiceIntegrationTest` — уникальное ограничение на пару «дата + время», производные запросы Spring Data (свои записи с сегодняшнего дня, отсортированные) и стартовый прайс из миграции.
+
+Заодно на этих тестах отрабатывает `ddl-auto: validate` — если сущность разойдётся со схемой, контекст не поднимется и тесты упадут.
+
+Для интеграционных тестов нужен запущенный Docker: Testcontainers поднимает контейнер сам.
 
 ## Настройки
 
