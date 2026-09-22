@@ -1,5 +1,7 @@
 # Nail Master Bot
 
+[![CI](https://github.com/bno4a/nail-master-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/bno4a/nail-master-bot/actions/workflows/ci.yml)
+
 Telegram-бот для записи на маникюр к одному мастеру. Клиент выбирает услугу, дату и время из свободных слотов, а мастер получает уведомления о новых записях и отменах.
 
 ## Возможности
@@ -103,6 +105,8 @@ docker compose up -d postgres
 Заодно на этих тестах отрабатывает `ddl-auto: validate` — если сущность разойдётся со схемой, контекст не поднимется и тесты упадут.
 
 Для интеграционных тестов нужен запущенный Docker: Testcontainers поднимает контейнер сам.
+
+На каждый push и pull request в `main` GitHub Actions прогоняет `./mvnw verify` (на раннерах Docker есть, так что Testcontainers работает без настройки) и отдельно собирает Docker-образ.
 
 ## Настройки
 
