@@ -5,11 +5,7 @@ spring:
     password: ${DB_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: update
-    defer-datasource-initialization: true
-  sql:
-    init:
-      mode: always
+      ddl-auto: validate
 
 salon:
   work-start: "10:00"

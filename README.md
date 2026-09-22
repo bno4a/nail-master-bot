@@ -28,7 +28,7 @@ Telegram-бот для записи на маникюр к одному маст
 ## Стек
 
 - Java 17, Spring Boot 3.5, Maven
-- PostgreSQL 16, Spring Data JPA (Hibernate)
+- PostgreSQL 16, Spring Data JPA (Hibernate), Flyway
 - TelegramBots 6.9 (long polling)
 - Lombok
 - JUnit 5, Mockito, AssertJ
@@ -43,7 +43,13 @@ src/main/java/com/kazancev/nailbot/
 ├── repository/  Spring Data JPA репозитории
 ├── entity/      Client, ServiceItem, Appointment
 └── config/      BotConfig, SalonProperties
+
+src/main/resources/db/migration/
+├── V1__init.sql              таблицы clients, services, appointments
+└── V2__insert_services.sql   стартовый прайс
 ```
+
+Схему базы ведёт Flyway, миграции применяются при старте приложения. Hibernate работает в режиме `ddl-auto: validate` — он ничего не создаёт и не меняет, только проверяет, что таблицы совпадают с сущностями, и падает при старте, если нет.
 
 Шаг, на котором находится пользователь во время записи, хранится в `ConcurrentHashMap` в памяти бота.
 
