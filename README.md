@@ -1,1 +1,103 @@
-# nail-master-bot
+# Nail Master Bot
+
+Telegram-бот для записи на маникюр к одному мастеру. Клиент выбирает услугу, дату и время из свободных слотов, а мастер получает уведомления о новых записях и отменах.
+
+## Возможности
+
+**Для клиента**
+- `/start` — приветствие и меню: «Записаться», «Мои записи», «Прайс»
+- Запись в четыре шага: услуга → дата → свободное время → подтверждение
+- «Мои записи» — список предстоящих записей с кнопкой «Отменить»
+- «Прайс» — список услуг с ценами
+- Напоминание о записи за день
+
+**Для мастера** (определяется по telegram id из конфигурации)
+- Уведомление о каждой новой записи и о каждой отмене
+- `/today` — записи на сегодня
+
+Салон работает с 10:00 до 19:00, слоты по 2 часа, выходной — воскресенье. Запись открыта на 7 дней вперёд. Всё это настраивается в `application.yml`.
+
+Занять одно и то же время дважды нельзя: в таблице `appointments` стоит уникальное ограничение на пару «дата + время», а бот показывает понятное сообщение, если слот успели занять.
+
+## Скриншоты
+
+| Меню | Выбор времени | Мои записи |
+|---|---|---|
+| ![Меню](docs/screenshots/start.png) | ![Выбор времени](docs/screenshots/booking.png) | ![Мои записи](docs/screenshots/my-appointments.png) |
+
+## Стек
+
+- Java 17, Spring Boot 3.5, Maven
+- PostgreSQL 16, Spring Data JPA (Hibernate)
+- TelegramBots 6.9 (long polling)
+- Lombok
+- JUnit 5, Mockito, AssertJ
+- Docker и Docker Compose
+
+## Структура проекта
+
+```
+src/main/java/com/kazancev/nailbot/
+├── bot/         NailBot, Keyboards, BookingState, Formats
+├── service/     AppointmentService, SlotService, ClientService, ReminderService
+├── repository/  Spring Data JPA репозитории
+├── entity/      Client, ServiceItem, Appointment
+└── config/      BotConfig, SalonProperties
+```
+
+Шаг, на котором находится пользователь во время записи, хранится в `ConcurrentHashMap` в памяти бота.
+
+## Запуск
+
+Нужны Docker и Docker Compose.
+
+1. Создай бота у [@BotFather](https://t.me/BotFather) и получи токен. Свой telegram id можно узнать у [@userinfobot](https://t.me/userinfobot).
+2. Скопируй `.env.example` в `.env` и заполни значения:
+   ```
+   DB_PASSWORD=...
+   BOT_TOKEN=...
+   BOT_USERNAME=...
+   MASTER_TELEGRAM_ID=...
+   TZ=Asia/Irkutsk
+   ```
+3. Запусти:
+   ```bash
+   docker compose up -d --build
+   ```
+4. Напиши боту `/start`.
+
+Логи приложения:
+```bash
+docker compose logs -f app
+```
+
+Остановить (данные сохранятся):
+```bash
+docker compose down
+```
+
+## Разработка
+
+Поднять только базу, а приложение запускать из IDE:
+```bash
+docker compose up -d postgres
+```
+Переменные окружения `DB_PASSWORD`, `BOT_TOKEN`, `BOT_USERNAME` и `MASTER_TELEGRAM_ID` нужно задать в конфигурации запуска IDE.
+
+Тесты:
+```bash
+./mvnw test
+```
+
+## Настройки
+
+| Параметр | Значение по умолчанию | Описание |
+|---|---|---|
+| `salon.work-start` | `10:00` | Начало рабочего дня |
+| `salon.work-end` | `19:00` | Конец рабочего дня |
+| `salon.slot-duration` | `2h` | Длительность одного слота |
+| `salon.day-off` | `SUNDAY` | Выходной |
+| `salon.booking-days` | `7` | На сколько дней вперёд открыта запись |
+| `bot.reminder-cron` | `0 0 18 * * *` | Когда рассылать напоминания на завтра |
+
+Токен бота и пароль базы передаются только через переменные окружения.
